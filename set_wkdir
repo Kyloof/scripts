@@ -1,0 +1,13 @@
+#!/bin/bash
+
+FULLPATH=$(realpath "$1")
+ALIASES="$ZDOTDIR/aliases.zsh"
+COMMAND="alias wkdir='cd $FULLPATH'"
+
+if grep -q "alias wkdir" "$ALIASES"; then
+	sed -i "s|alias wkdir=.*|$COMMAND|g" "$ALIASES"
+else
+	echo "$COMMAND" >> "$ALIASES"
+fi
+
+source "$ZDOTDIR/.zshrc" > /dev/null 2>&1
