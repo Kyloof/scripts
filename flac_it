@@ -1,0 +1,39 @@
+#! /usr/bin/env bash
+
+read -p "Artist: " artist
+read -p "Album: " album
+read -p "Genre: " genre
+read -p "Date (YYYY-MM-DD): " date
+
+full_name="${artist} - ${album}"
+
+DIR=$(realpath $1)
+
+track_number=0
+
+for audio_file in *; do
+	if [[ -n $(file --mime-type "$audio_file" | grep "audio") ]]; then
+		((track_number++))
+
+		read -p "Title of track number ${track_number}: " track_title
+		flac_file="${full_name} - $(printf "%02d" "$track_number") ${track_title}.flac"
+		flac_path="${DIR}/${flac_file}"
+
+		if [[ -n $(file "$audio_file" | grep "FLAC") ]]; then
+			mv "${DIR}/${audio_file}" "$flac_path" > /dev/null 2>&1
+		else 
+			sox "${DIR}/${audio_file}" "$flac_path"
+		fi
+
+		metaflac --remove-all-tags "$flac_path"
+
+		metaflac --set-tag="ARTIST=$artist" "$flac_path"
+		metaflac --set-tag="ALBUM=$album" "$flac_path"
+		metaflac --set-tag="TRACKNUMBER=$track_number" "$flac_path"
+		metaflac --set-tag="TITLE=$track_title" "$flac_path"
+		metaflac --set-tag="GENRE=$genre" "$flac_path"
+		metaflac --set-tag="DATE=$date" "$flac_path"
+	fi
+done
+
+( cd "$DIR" && zip -r "${full_name}.zip" . )
