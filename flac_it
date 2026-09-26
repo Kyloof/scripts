@@ -9,6 +9,21 @@ full_name="${artist} - ${album}"
 
 DIR=$(realpath $1)
 
+format=""
+
+
+for audio_file in *; do
+	if [[ -n $(file --mime-type "$audio_file" | grep "audio") ]]; then
+		arr=($audio_file)
+		number=${arr[1]%.*}
+		format=${arr[1]#*.}
+
+		if [ ${#number} = 1 ]; then
+			mv "${DIR}/${audio_file}" "${DIR}/${arr[0]} $(printf "%02d" "$number").${format}"
+		fi
+	fi
+done
+
 track_number=0
 
 for audio_file in *; do
@@ -36,4 +51,17 @@ for audio_file in *; do
 	fi
 done
 
-( cd "$DIR" && zip -r "${full_name}.zip" . )
+read -p "Remove original .$format audio files? (Y/n)" rm_files
+rm_files=${rm_files:-y}
+if [ "$rm_files" = "y" ]; then
+	( cd "$DIR" && rm *."$format")
+fi
+
+read -p "ZIP and move to ZIPs ../zips/? (Y/n)" copy_zip
+copy_zip=${copy_zip:-y}
+
+if [ "$copy_zip" = "y" ]; then
+	( cd "$DIR" && zip -r "${full_name}.zip" . )
+	mv "${DIR}/${full_name}.zip" "${DIR}/../zips/"
+fi
+
